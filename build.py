@@ -18,11 +18,9 @@ if __name__ == "__main__":
     # add c++17 build configs
     new_builds = []
     for settings, options, env_vars, build_requires, reference in builder.items:
-        new_settings = copy.copy(settings)
-        new_settings["compiler.cppstd"] = "17"
-        new_settings["compiler.libcxx"] = "libstdc++11"
+        settings["compiler.cppstd"] = "17"
+        settings["compiler.libcxx"] = "libstdc++11"
         new_builds.append([settings, options, env_vars, build_requires])
-        new_builds.append([new_settings, options, env_vars, build_requires])
     builder.builds = new_builds
 
     builder.run()
