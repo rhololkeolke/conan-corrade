@@ -23,7 +23,7 @@ def sort_libs(correct_order, libs, lib_suffix='', reverse_result=False):
 
 class LibnameConan(ConanFile):
     name = "corrade"
-    version = "2019.01"
+    version = "2019.01.20190921"
     description =   "Corrade is a multiplatform utility library written \
                     in C++11/C++14. It's used as a base for the Magnum \
                     graphics engine, among other things."
@@ -77,12 +77,9 @@ class LibnameConan(ConanFile):
             raise ConanException("{} requires Visual Studio version 14 or greater".format(self.name))
 
     def source(self):
-        source_url = "https://github.com/mosra/corrade"
-        tools.get("{0}/archive/v{1}.tar.gz".format(source_url, self.version))
-        extracted_dir = self.name + "-" + self.version
-
-        # Rename to "source_subfolder" is a convention to simplify later steps
-        os.rename(extracted_dir, self._source_subfolder)
+        git = tools.Git(folder=self._source_subfolder)
+        git.clone('https://github.com/mosra/corrade.git')
+        git.checkout('837fbcd0172f77b7cbee49d910bb5ee571eb3288')
 
     def _configure_cmake(self):
         cmake = CMake(self)
