@@ -1,11 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from conans import ConanFile, CMake, tools
-from conans.errors import ConanException
 import os
 
-def sort_libs(correct_order, libs, lib_suffix='', reverse_result=False):
+from conans import CMake, ConanFile, tools
+from conans.errors import ConanException
+
+
+def sort_libs(correct_order, libs, lib_suffix="", reverse_result=False):
     # Add suffix for correct string matching
     correct_order[:] = [s.__add__(lib_suffix) for s in correct_order]
 
@@ -21,10 +23,11 @@ def sort_libs(correct_order, libs, lib_suffix='', reverse_result=False):
 
     return result
 
+
 class LibnameConan(ConanFile):
     name = "corrade"
     version = "2019.01.20190921"
-    description =   "Corrade is a multiplatform utility library written \
+    description = "Corrade is a multiplatform utility library written \
                     in C++11/C++14. It's used as a base for the Magnum \
                     graphics engine, among other things."
     # topics can get used for searches, GitHub topics, Bintray tags etc. Add here keywords about the library
@@ -32,16 +35,20 @@ class LibnameConan(ConanFile):
     url = "https://github.com/helmesjo/conan-corrade"
     homepage = "https://magnum.graphics/corrade"
     author = "helmesjo <helmesjo@gmail.com>"
-    license = "MIT"  # Indicates license type of the packaged library; please use SPDX Identifiers https://spdx.org/licenses/
+    license = (
+        "MIT"
+    )  # Indicates license type of the packaged library; please use SPDX Identifiers https://spdx.org/licenses/
     exports = ["LICENSE.md"]
     exports_sources = ["CMakeLists.txt"]
     generators = "cmake"
-    short_paths = True  # Some folders go out of the 260 chars path length scope (windows)
+    short_paths = (
+        True
+    )  # Some folders go out of the 260 chars path length scope (windows)
 
     # Options may need to change depending on the packaged library.
     settings = "os", "arch", "compiler", "build_type"
     options = {
-        "shared": [True, False], 
+        "shared": [True, False],
         "fPIC": [True, False],
         "build_deprecated": [True, False],
         "with_interconnect": [True, False],
@@ -49,9 +56,11 @@ class LibnameConan(ConanFile):
         "with_rc": [True, False],
         "with_testsuite": [True, False],
         "with_utility": [True, False],
+        "with_main": [True, False],
+        "build_multithreaded": [True, False],
     }
     default_options = {
-        "shared": False, 
+        "shared": False,
         "fPIC": True,
         "build_deprecated": True,
         "with_interconnect": True,
@@ -59,27 +68,33 @@ class LibnameConan(ConanFile):
         "with_rc": True,
         "with_testsuite": True,
         "with_utility": True,
+        "with_main": True,
+        "build_multithreaded": True,
     }
 
     # Custom attributes for Bincrafters recipe conventions
     _source_subfolder = "source_subfolder"
     _build_subfolder = "build_subfolder"
 
-    requires = (
-    )
+    requires = ()
 
     def config_options(self):
-        if self.settings.os == 'Windows':
+        if self.settings.os == "Windows":
             del self.options.fPIC
 
     def configure(self):
-        if self.settings.compiler == 'Visual Studio' and int(self.settings.compiler.version.value) < 14:
-            raise ConanException("{} requires Visual Studio version 14 or greater".format(self.name))
+        if (
+            self.settings.compiler == "Visual Studio"
+            and int(self.settings.compiler.version.value) < 14
+        ):
+            raise ConanException(
+                "{} requires Visual Studio version 14 or greater".format(self.name)
+            )
 
     def source(self):
         git = tools.Git(folder=self._source_subfolder)
-        git.clone('https://github.com/mosra/corrade.git')
-        git.checkout('837fbcd0172f77b7cbee49d910bb5ee571eb3288')
+        git.clone("https://github.com/mosra/corrade.git")
+        git.checkout("837fbcd0172f77b7cbee49d910bb5ee571eb3288")
 
     def _configure_cmake(self):
         cmake = CMake(self)
@@ -87,7 +102,13 @@ class LibnameConan(ConanFile):
         def add_cmake_option(option, value):
             var_name = "{}".format(option).upper()
             value_str = "{}".format(value)
-            var_value = "ON" if value_str == 'True' else "OFF" if value_str == 'False' else value_str 
+            var_value = (
+                "ON"
+                if value_str == "True"
+                else "OFF"
+                if value_str == "False"
+                else value_str
+            )
             cmake.definitions[var_name] = var_value
 
         for option, value in self.options.items():
@@ -99,12 +120,29 @@ class LibnameConan(ConanFile):
 
         add_cmake_option("BUILD_STATIC", not self.options.shared)
 
-        if self.settings.compiler == 'Visual Studio':
-            add_cmake_option("MSVC2015_COMPATIBILITY", int(self.settings.compiler.version.value) == 14)
-            add_cmake_option("MSVC2017_COMPATIBILITY", int(self.settings.compiler.version.value) == 17)
-        
-        if self.settings.compiler == 'gcc':
-            add_cmake_option("GCC47_COMPATIBILITY", float(self.settings.compiler.version.value) < 4.8)
+        if self.settings.compiler == "Visual Studio":
+            add_cmake_option(
+                "MSVC2015_COMPATIBILITY",
+                int(self.settings.compiler.version.value) == 14,
+            )
+            add_cmake_option(
+                "MSVC2017_COMPATIBILITY",
+                int(self.settings.compiler.version.value) == 17,
+            )
+
+        if self.settings.compiler == "gcc":
+            add_cmake_option(
+                "GCC47_COMPATIBILITY", float(self.settings.compiler.version.value) < 4.8
+            )
+
+        add_cmake_option("WITH_INTERCONNECT", self.options.with_interconnect)
+        add_cmake_option("WITH_PLUGINMANAGER", self.options.with_pluginmanager)
+        add_cmake_option("WITH_TESTSUITE", self.options.with_testsuite)
+        add_cmake_option("WITH_UTILITY", self.options.with_utility)
+        add_cmake_option("WITH_MAIN", self.options.with_main)
+        add_cmake_option("WITH_RC", self.options.with_rc)
+        add_cmake_option("BUILD_DEPRECATED", self.options.build_deprecated)
+        add_cmake_option("BUILD_MULTITHREADED", self.options.build_multithreaded)
 
         cmake.configure(build_folder=self._build_subfolder)
 
@@ -122,16 +160,21 @@ class LibnameConan(ConanFile):
     def package_info(self):
         # See dependency order here: https://doc.magnum.graphics/magnum/custom-buildsystems.html
         allLibs = [
-            #1
+            # 1
             "CorradeUtility",
             "CorradeContainers",
-            #2
+            # 2
             "CorradeInterconnect",
             "CorradePluginManager",
             "CorradeTestSuite",
         ]
 
         # Sort all built libs according to above, and reverse result for correct link order
-        suffix = '-d' if self.settings.build_type == "Debug" else ''
+        suffix = "-d" if self.settings.build_type == "Debug" else ""
         builtLibs = tools.collect_libs(self)
-        self.cpp_info.libs = sort_libs(correct_order=allLibs, libs=builtLibs, lib_suffix=suffix, reverse_result=True)
+        self.cpp_info.libs = sort_libs(
+            correct_order=allLibs,
+            libs=builtLibs,
+            lib_suffix=suffix,
+            reverse_result=True,
+        )
